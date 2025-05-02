@@ -1,0 +1,25 @@
+{
+  "name": "igaming-odds-mcp",
+  "version": "0.1.0",
+  "description": "MCP server with betting-odds tools: conversions, bookmaker margin, parlay, settlement, Kelly staking",
+  "author": "Artem Soldatov",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "igaming-odds-mcp": "dist/index.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}
