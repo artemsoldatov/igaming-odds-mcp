@@ -95,3 +95,24 @@ export function normalize(value: number | string, format: OddsFormat): AllFormat
     probability: round(decimalToProbability(decimal)),
   };
 }
+
+export interface MarginResult {
+  overround: number;
+  marginPct: number;
+  fairDecimalOdds: number[];
+  fairProbabilities: number[];
+}
+
+// bookmaker margin (overround) and the fair odds with the margin removed
+export function bookmakerMargin(decimalOdds: number[]): MarginResult {
+  if (decimalOdds.length < 2) throw new Error('Need at least two outcomes');
+  const implied = decimalOdds.map(decimalToProbability);
+  const overround = implied.reduce((a, p) => a + p, 0);
+  const fairProbabilities = implied.map((p) => p / overround);
+  return {
+    overround: round(overround, 6),
+    marginPct: round((overround - 1) * 100, 4),
+    fairDecimalOdds: fairProbabilities.map((p) => round(1 / p)),
+    fairProbabilities: fairProbabilities.map((p) => round(p)),
+  };
+}

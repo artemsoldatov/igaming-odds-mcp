@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decimalToAmerican, decimalToFractional, normalize, toDecimal } from './odds.js';
+import { bookmakerMargin, decimalToAmerican, decimalToFractional, normalize, toDecimal } from './odds.js';
 
 describe('conversions', () => {
   it('converts between formats around a known point', () => {
@@ -23,5 +23,20 @@ describe('conversions', () => {
     expect(() => toDecimal(0.9, 'decimal')).toThrow();
     expect(() => toDecimal(1.5, 'probability')).toThrow();
     expect(() => toDecimal(0, 'american')).toThrow();
+  });
+});
+
+describe('bookmaker margin', () => {
+  it('computes overround and fair odds that sum to 1', () => {
+    // a two-way market priced at 1.9 / 1.9 carries a margin
+    const r = bookmakerMargin([1.9, 1.9]);
+    expect(r.marginPct).toBeCloseTo(5.26, 1);
+    const sum = r.fairProbabilities.reduce((a, p) => a + p, 0);
+    expect(sum).toBeCloseTo(1, 5);
+    expect(r.fairDecimalOdds[0]).toBeCloseTo(2.0, 2);
+  });
+
+  it('reports ~0 margin for a fair market', () => {
+    expect(bookmakerMargin([2, 2]).marginPct).toBeCloseTo(0, 5);
   });
 });
