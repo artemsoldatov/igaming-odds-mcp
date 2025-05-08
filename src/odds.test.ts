@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { bookmakerMargin, decimalToAmerican, decimalToFractional, normalize, toDecimal } from './odds.js';
+import {
+  bookmakerMargin,
+  decimalToAmerican,
+  decimalToFractional,
+  normalize,
+  parlayDecimal,
+  toDecimal,
+} from './odds.js';
 
 describe('conversions', () => {
   it('converts between formats around a known point', () => {
@@ -38,5 +45,13 @@ describe('bookmaker margin', () => {
 
   it('reports ~0 margin for a fair market', () => {
     expect(bookmakerMargin([2, 2]).marginPct).toBeCloseTo(0, 5);
+  });
+});
+
+describe('parlay', () => {
+  it('multiplies legs', () => {
+    const p = parlayDecimal([2, 1.5, 3]);
+    expect(p.decimal).toBe(9);
+    expect(p.probability).toBeCloseTo(0.1111, 3);
   });
 });

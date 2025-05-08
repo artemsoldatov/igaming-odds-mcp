@@ -116,3 +116,9 @@ export function bookmakerMargin(decimalOdds: number[]): MarginResult {
     fairProbabilities: fairProbabilities.map((p) => round(p)),
   };
 }
+
+export function parlayDecimal(legs: number[]): { decimal: number; probability: number } {
+  if (legs.length === 0) throw new Error('Need at least one leg');
+  const decimal = legs.reduce((a, o) => a * o, 1);
+  return { decimal: round(decimal), probability: round(1 / decimal) };
+}
