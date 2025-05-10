@@ -122,3 +122,31 @@ export function parlayDecimal(legs: number[]): { decimal: number; probability: n
   const decimal = legs.reduce((a, o) => a * o, 1);
   return { decimal: round(decimal), probability: round(1 / decimal) };
 }
+
+export type Result = 'win' | 'lose' | 'push' | 'void';
+
+export interface Settlement {
+  outcome: Result;
+  returnCents: number;
+  profitCents: number;
+}
+
+// integer cents in and out; rounding is floor on returns (house-favouring),
+// documented and tested
+function toReturn(stakeCents: number, decimal: number): number {
+  return Math.floor(stakeCents * decimal);
+}
+
+export function settleSingle(stakeCents: number, decimal: number, result: Result): Settlement {
+  switch (result) {
+    case 'win': {
+      const ret = toReturn(stakeCents, decimal);
+      return { outcome: 'win', returnCents: ret, profitCents: ret - stakeCents };
+    }
+    case 'lose':
+      return { outcome: 'lose', returnCents: 0, profitCents: -stakeCents };
+    case 'push':
+    case 'void':
+      return { outcome: result, returnCents: stakeCents, profitCents: 0 };
+  }
+}

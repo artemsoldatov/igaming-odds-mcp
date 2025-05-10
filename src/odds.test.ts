@@ -5,6 +5,7 @@ import {
   decimalToFractional,
   normalize,
   parlayDecimal,
+  settleSingle,
   toDecimal,
 } from './odds.js';
 
@@ -53,5 +54,24 @@ describe('parlay', () => {
     const p = parlayDecimal([2, 1.5, 3]);
     expect(p.decimal).toBe(9);
     expect(p.probability).toBeCloseTo(0.1111, 3);
+  });
+});
+
+describe('single settlement (integer cents, floor)', () => {
+  it('pays a win as stake x odds', () => {
+    expect(settleSingle(1000, 2.5, 'win')).toEqual({
+      outcome: 'win',
+      returnCents: 2500,
+      profitCents: 1500,
+    });
+  });
+  it('floors fractional returns in the house favour', () => {
+    // 101 * 1.667 = 168.4 -> floor 168
+    expect(settleSingle(101, 1.667, 'win').returnCents).toBe(168);
+  });
+  it('loses, pushes and voids correctly', () => {
+    expect(settleSingle(1000, 2, 'lose')).toMatchObject({ returnCents: 0, profitCents: -1000 });
+    expect(settleSingle(1000, 2, 'push')).toMatchObject({ returnCents: 1000, profitCents: 0 });
+    expect(settleSingle(1000, 2, 'void')).toMatchObject({ returnCents: 1000, profitCents: 0 });
   });
 });
