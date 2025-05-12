@@ -5,6 +5,7 @@ import {
   decimalToFractional,
   normalize,
   parlayDecimal,
+  settleAccumulator,
   settleSingle,
   toDecimal,
 } from './odds.js';
@@ -73,5 +74,29 @@ describe('single settlement (integer cents, floor)', () => {
     expect(settleSingle(1000, 2, 'lose')).toMatchObject({ returnCents: 0, profitCents: -1000 });
     expect(settleSingle(1000, 2, 'push')).toMatchObject({ returnCents: 1000, profitCents: 0 });
     expect(settleSingle(1000, 2, 'void')).toMatchObject({ returnCents: 1000, profitCents: 0 });
+  });
+});
+
+describe('accumulator settlement', () => {
+  it('multiplies winning legs', () => {
+    const r = settleAccumulator(1000, [
+      { decimal: 2, result: 'win' },
+      { decimal: 1.5, result: 'win' },
+    ]);
+    expect(r).toMatchObject({ outcome: 'win', returnCents: 3000, profitCents: 2000 });
+  });
+  it('loses if any leg loses', () => {
+    const r = settleAccumulator(1000, [
+      { decimal: 2, result: 'win' },
+      { decimal: 1.5, result: 'lose' },
+    ]);
+    expect(r).toMatchObject({ outcome: 'lose', returnCents: 0 });
+  });
+  it('drops a void leg to odds 1', () => {
+    const r = settleAccumulator(1000, [
+      { decimal: 2, result: 'win' },
+      { decimal: 1.5, result: 'void' },
+    ]);
+    expect(r).toMatchObject({ outcome: 'win', returnCents: 2000 });
   });
 });

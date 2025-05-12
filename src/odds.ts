@@ -150,3 +150,21 @@ export function settleSingle(stakeCents: number, decimal: number, result: Result
       return { outcome: result, returnCents: stakeCents, profitCents: 0 };
   }
 }
+
+export interface Leg {
+  decimal: number;
+  result: Result;
+}
+
+// accumulator: any losing leg loses the whole bet; a void leg drops to odds 1
+export function settleAccumulator(stakeCents: number, legs: Leg[]): Settlement {
+  if (legs.some((l) => l.result === 'lose')) {
+    return { outcome: 'lose', returnCents: 0, profitCents: -stakeCents };
+  }
+  const combined = legs.reduce((a, l) => a * (l.result === 'win' ? l.decimal : 1), 1);
+  if (combined <= 1) {
+    return { outcome: 'void', returnCents: stakeCents, profitCents: 0 };
+  }
+  const ret = toReturn(stakeCents, combined);
+  return { outcome: 'win', returnCents: ret, profitCents: ret - stakeCents };
+}
