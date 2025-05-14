@@ -6,6 +6,7 @@ import {
   normalize,
   parlayDecimal,
   settleAccumulator,
+  settleEachWay,
   settleSingle,
   toDecimal,
 } from './odds.js';
@@ -98,5 +99,24 @@ describe('accumulator settlement', () => {
       { decimal: 1.5, result: 'void' },
     ]);
     expect(r).toMatchObject({ outcome: 'win', returnCents: 2000 });
+  });
+});
+
+describe('each-way settlement', () => {
+  it('pays win and place parts on a win', () => {
+    // stake 1000 each way (2000 total), odds 5.0, place 1/4 -> place decimal 2.0
+    const r = settleEachWay(1000, 5, 0.25, 'win');
+    // win part 5000 + place part 2000 = 7000, profit 5000
+    expect(r).toMatchObject({ outcome: 'win', returnCents: 7000, profitCents: 5000 });
+  });
+  it('pays only the place part on a place', () => {
+    const r = settleEachWay(1000, 5, 0.25, 'place');
+    expect(r).toMatchObject({ outcome: 'place', returnCents: 2000, profitCents: 0 });
+  });
+  it('loses both parts on a loss', () => {
+    expect(settleEachWay(1000, 5, 0.25, 'lose')).toMatchObject({
+      outcome: 'lose',
+      profitCents: -2000,
+    });
   });
 });

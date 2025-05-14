@@ -168,3 +168,33 @@ export function settleAccumulator(stakeCents: number, legs: Leg[]): Settlement {
   const ret = toReturn(stakeCents, combined);
   return { outcome: 'win', returnCents: ret, profitCents: ret - stakeCents };
 }
+
+export type EachWayResult = 'win' | 'place' | 'lose';
+
+export interface EachWaySettlement {
+  outcome: EachWayResult;
+  returnCents: number;
+  profitCents: number;
+}
+
+// each-way = two stakes: a win part at full odds and a place part at
+// (odds-1) * placeFraction + 1. total staked is 2 x stakeCents.
+export function settleEachWay(
+  stakeCents: number,
+  decimal: number,
+  placeFraction: number,
+  result: EachWayResult,
+): EachWaySettlement {
+  const placeDecimal = (decimal - 1) * placeFraction + 1;
+  const totalStake = stakeCents * 2;
+  if (result === 'lose') {
+    return { outcome: 'lose', returnCents: 0, profitCents: -totalStake };
+  }
+  const placeReturn = toReturn(stakeCents, placeDecimal);
+  if (result === 'place') {
+    return { outcome: 'place', returnCents: placeReturn, profitCents: placeReturn - totalStake };
+  }
+  const winReturn = toReturn(stakeCents, decimal);
+  const ret = winReturn + placeReturn;
+  return { outcome: 'win', returnCents: ret, profitCents: ret - totalStake };
+}
