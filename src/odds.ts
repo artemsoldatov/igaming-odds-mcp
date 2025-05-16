@@ -198,3 +198,33 @@ export function settleEachWay(
   const ret = winReturn + placeReturn;
   return { outcome: 'win', returnCents: ret, profitCents: ret - totalStake };
 }
+
+export interface KellyResult {
+  edgePct: number;
+  kellyFraction: number;
+  recommendedFraction: number;
+  stakeCents: number;
+}
+
+// Kelly criterion: f* = (b p - q) / b, b = decimal - 1. Negative edge -> 0 stake.
+export function kelly(
+  decimal: number,
+  probability: number,
+  bankrollCents: number,
+  fraction = 1,
+): KellyResult {
+  if (!(probability > 0 && probability < 1)) throw new Error('Probability must be between 0 and 1');
+  const b = decimal - 1;
+  const q = 1 - probability;
+  const f = (b * probability - q) / b;
+  const capped = Math.max(0, f);
+  // round the fraction first so the staked amount matches the reported fraction
+  // (and float noise like 0.6 - 0.4 = 0.1999… can't leak into the stake)
+  const recommended = round(capped * fraction, 4);
+  return {
+    edgePct: round((decimal * probability - 1) * 100, 4),
+    kellyFraction: round(f, 4),
+    recommendedFraction: recommended,
+    stakeCents: Math.floor(recommended * bankrollCents),
+  };
+}

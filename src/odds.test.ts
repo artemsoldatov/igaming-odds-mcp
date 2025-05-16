@@ -3,6 +3,7 @@ import {
   bookmakerMargin,
   decimalToAmerican,
   decimalToFractional,
+  kelly,
   normalize,
   parlayDecimal,
   settleAccumulator,
@@ -118,5 +119,25 @@ describe('each-way settlement', () => {
       outcome: 'lose',
       profitCents: -2000,
     });
+  });
+});
+
+describe('kelly staking', () => {
+  it('sizes a positive-edge bet', () => {
+    // decimal 2.0, true prob 0.6 -> b=1, f=(1*0.6-0.4)/1=0.2
+    const r = kelly(2, 0.6, 100_000);
+    expect(r.kellyFraction).toBeCloseTo(0.2);
+    expect(r.stakeCents).toBe(20_000);
+    expect(r.edgePct).toBeCloseTo(20);
+  });
+  it('recommends no stake on a negative edge', () => {
+    const r = kelly(2, 0.4, 100_000);
+    expect(r.recommendedFraction).toBe(0);
+    expect(r.stakeCents).toBe(0);
+  });
+  it('applies a fractional-Kelly multiplier', () => {
+    const r = kelly(2, 0.6, 100_000, 0.5);
+    expect(r.recommendedFraction).toBeCloseTo(0.1);
+    expect(r.stakeCents).toBe(10_000);
   });
 });
