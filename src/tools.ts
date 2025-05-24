@@ -1,6 +1,12 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { bookmakerMargin, normalize, parlayDecimal } from './odds.js';
+import {
+  bookmakerMargin,
+  normalize,
+  parlayDecimal,
+  settleAccumulator,
+  settleSingle,
+} from './odds.js';
 
 type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
 
@@ -18,6 +24,7 @@ function run(fn: () => unknown): ToolResult {
 }
 
 const decimalOdds = z.number().gt(1).describe('Decimal odds, e.g. 2.5');
+const result = z.enum(['win', 'lose', 'push', 'void']);
 
 export function registerTools(server: McpServer): void {
   server.tool(
@@ -42,5 +49,26 @@ export function registerTools(server: McpServer): void {
     'Combine several legs into one accumulator price.',
     { legs: z.array(decimalOdds).min(1).describe('Decimal odds per leg') },
     ({ legs }) => run(() => parlayDecimal(legs)),
+  );
+
+  server.tool(
+    'settle_single',
+    'Return and profit in integer cents for a single bet (floor rounding).',
+    {
+      stakeCents: z.number().int().positive(),
+      decimalOdds,
+      result,
+    },
+    ({ stakeCents, decimalOdds: odds, result: r }) => run(() => settleSingle(stakeCents, odds, r)),
+  );
+
+  server.tool(
+    'settle_accumulator',
+    'Settle a multi-leg accumulator; any losing leg loses the bet, void legs drop to 1.',
+    {
+      stakeCents: z.number().int().positive(),
+      legs: z.array(z.object({ decimal: decimalOdds, result })).min(1),
+    },
+    ({ stakeCents, legs }) => run(() => settleAccumulator(stakeCents, legs)),
   );
 }
