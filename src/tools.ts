@@ -2,9 +2,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
   bookmakerMargin,
+  kelly,
   normalize,
   parlayDecimal,
   settleAccumulator,
+  settleEachWay,
   settleSingle,
 } from './odds.js';
 
@@ -70,5 +72,31 @@ export function registerTools(server: McpServer): void {
       legs: z.array(z.object({ decimal: decimalOdds, result })).min(1),
     },
     ({ stakeCents, legs }) => run(() => settleAccumulator(stakeCents, legs)),
+  );
+
+  server.tool(
+    'settle_each_way',
+    'Settle an each-way bet (win + place parts); total staked is 2x stakeCents.',
+    {
+      stakeCents: z.number().int().positive(),
+      decimalOdds,
+      placeFraction: z.number().gt(0).lte(1).describe('Place terms, e.g. 0.25 for 1/4 odds'),
+      result: z.enum(['win', 'place', 'lose']),
+    },
+    ({ stakeCents, decimalOdds: odds, placeFraction, result: r }) =>
+      run(() => settleEachWay(stakeCents, odds, placeFraction, r)),
+  );
+
+  server.tool(
+    'kelly_stake',
+    'Kelly-criterion stake for an edge; negative edge recommends no stake.',
+    {
+      decimalOdds,
+      probability: z.number().gt(0).lt(1).describe('Your estimated true win probability'),
+      bankrollCents: z.number().int().positive(),
+      fraction: z.number().gt(0).lte(1).default(1).describe('Fractional-Kelly multiplier'),
+    },
+    ({ decimalOdds: odds, probability, bankrollCents, fraction }) =>
+      run(() => kelly(odds, probability, bankrollCents, fraction)),
   );
 }
