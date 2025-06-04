@@ -46,4 +46,22 @@ describe('mcp server (stdio)', () => {
     expect(parsed.decimal).toBeCloseTo(2.5);
     expect(parsed.american).toBe(150);
   });
+
+  it('sizes a Kelly stake through a tool call', async () => {
+    const res = await client.callTool({
+      name: 'kelly_stake',
+      arguments: { decimalOdds: 2, probability: 0.6, bankrollCents: 100000 },
+    });
+    const content = res.content as { type: string; text: string }[];
+    const parsed = JSON.parse(content[0]!.text) as { stakeCents: number };
+    expect(parsed.stakeCents).toBe(20000);
+  });
+
+  it('returns a tool error for invalid odds', async () => {
+    const res = await client.callTool({
+      name: 'convert_odds',
+      arguments: { odds: 0.5, format: 'decimal' },
+    });
+    expect(res.isError).toBe(true);
+  });
 });
