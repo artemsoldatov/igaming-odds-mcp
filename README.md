@@ -17,3 +17,37 @@ pnpm install
 pnpm build
 pnpm test      # 22 tests: pure math + a real MCP handshake over stdio
 ```
+
+## Using it from Claude Desktop
+
+Add this to claude_desktop_config.json (on macOS that's ~/Library/Application Support/Claude/claude_desktop_config.json):
+
+```json
+{
+  "mcpServers": {
+    "igaming-odds": {
+      "command": "node",
+      "args": ["/absolute/path/to/igaming-odds-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Then just ask things like "convert 3/2 to American odds", "what's the margin on a 1.90 / 1.90 market", or "Kelly stake for decimal 2.0 at a true 60% with a $1000 bankroll" and it calls the tools instead of guessing at the math.
+
+## Example
+
+Calling bookmaker_margin with decimalOdds [1.9, 1.9] returns:
+
+```json
+{
+  "overround": 1.052632,
+  "marginPct": 5.2632,
+  "fairDecimalOdds": [2, 2],
+  "fairProbabilities": [0.5, 0.5]
+}
+```
+
+## A couple of implementation notes
+
+All the logic is pure functions in src/odds.ts; the tool layer only validates input and formats output. Money stays as integer cents and rounding always favors the house, which is asserted in the tests, matching the rule a real settlement engine would follow. Odds convert to exact fractions through a bounded continued-fraction approximation, so something like 1.3333 round-trips to 1/3 instead of some ugly exact decimal.
